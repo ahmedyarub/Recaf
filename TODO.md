@@ -58,3 +58,7 @@
 - [ ] Structural diff between two JARs
 - [ ] Show new/removed/changed classes
 - [ ] Field/method signature diffs and bytecode diffs
+
+## Priority 11: Navigation and Workspace State
+- [ ] Double-clicking on a search result should navigate to the decompile view and the found string
+- [ ] Save and restore the workspace status including scroll position (e.g. which node was collapsed)
