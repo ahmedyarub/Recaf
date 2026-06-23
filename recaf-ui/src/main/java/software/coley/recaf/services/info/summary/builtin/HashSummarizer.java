@@ -102,7 +102,7 @@ public class HashSummarizer implements ResourceSummarizer {
 
 		// Create TableView
 		TableView<HashEntry> tableView = new TableView<>();
-		tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+		tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
 		tableView.setFixedCellSize(40);
 
 		// Create columns
@@ -160,7 +160,7 @@ public class HashSummarizer implements ResourceSummarizer {
 				if (action != null) action.run();
 			}
 		});
-		tableView.getColumns().addAll(typeColumn, hashColumn, actionColumn);
+		tableView.getColumns().addAll(java.util.List.of(typeColumn, hashColumn, actionColumn));
 
 		// Add hash entries
 		ObservableList<HashEntry> hashEntries = FXCollections.observableArrayList(
