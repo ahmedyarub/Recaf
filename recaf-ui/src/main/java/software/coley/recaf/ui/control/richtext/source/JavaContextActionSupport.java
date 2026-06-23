@@ -24,6 +24,7 @@ import software.coley.recaf.info.AndroidClassInfo;
 import software.coley.recaf.info.ClassInfo;
 import software.coley.recaf.info.JvmClassInfo;
 import software.coley.recaf.info.member.ClassMember;
+import software.coley.recaf.path.IncompletePathException;
 import software.coley.recaf.path.ClassMemberPathNode;
 import software.coley.recaf.path.ClassPathNode;
 import software.coley.recaf.path.PathNode;
@@ -109,6 +110,7 @@ public class JavaContextActionSupport implements EditorComponent, UpdatableNavig
 	private final InheritanceGutterGraphicFactory inheritanceGutterGraphicFactory;
 	private final CellConfigurationService cellConfigurationService;
 	private final JavaContextActionManager contextManager;
+	private final Actions actions;
 	private final AstService astService;
 	private final InheritanceGraph graph;
 	private final Workspace workspace;
@@ -134,6 +136,7 @@ public class JavaContextActionSupport implements EditorComponent, UpdatableNavig
 		this.inheritanceGutterGraphicFactory = new InheritanceGutterGraphicFactory(cellConfigurationService, actions);
 		this.cellConfigurationService = cellConfigurationService;
 		this.contextManager = contextManager;
+		this.actions = actions;
 		this.astService = astService;
 		this.workspace = workspaceManager.getCurrent();
 		this.graph = graphService.getOrCreateInheritanceGraph(workspace);
@@ -674,7 +677,7 @@ public class JavaContextActionSupport implements EditorComponent, UpdatableNavig
 			// Sync caret
 			area.moveTo(hit.getInsertionIndex());
 
-			// Create menu
+			// Create menu from AST resolution (may be null if no symbol at position)
 			int offsetHitIndex = offset(hit.getInsertionIndex());
 			AstResolveResult result = resolvePosition(offsetHitIndex, false);
 			if (result != null) {
@@ -684,6 +687,30 @@ public class JavaContextActionSupport implements EditorComponent, UpdatableNavig
 				// Map the result's declaration state to a context-source.
 				ContextSource source = result.isDeclaration() ? ContextSource.DECLARATION : ContextSource.REFERENCE;
 				menu = cellConfigurationService.contextMenuOf(source, path);
+			}
+
+			// Add "View in Assembler at this line" — always available for JVM classes
+			if (this.path != null) {
+				ClassInfo classInfo = this.path.getValue();
+				if (classInfo.isJvmClass()) {
+					// Create a fallback menu if the AST didn't resolve anything
+					if (menu == null) {
+						menu = new javafx.scene.control.ContextMenu();
+					} else {
+						menu.getItems().add(new javafx.scene.control.SeparatorMenuItem());
+					}
+					javafx.scene.control.MenuItem viewInAssembler = new javafx.scene.control.MenuItem();
+					viewInAssembler.textProperty().bind(Lang.getBinding("menu.view.assembler-at-line"));
+					viewInAssembler.setGraphic(new FontIconView(CarbonIcons.CODE));
+					viewInAssembler.setOnAction(ev -> {
+						try {
+							actions.openAssemblerAtLine(this.path, line);
+						} catch (IncompletePathException ex) {
+							logger.warn("Cannot open assembler at line, path incomplete", ex);
+						}
+					});
+					menu.getItems().add(viewInAssembler);
+				}
 			}
 
 			// Show menu

@@ -12,6 +12,8 @@ import software.coley.recaf.services.decompile.DecompilerManager;
 import software.coley.recaf.services.cell.CellConfigurationService;
 import software.coley.recaf.services.info.association.FileTypeSyntaxAssociationService;
 import software.coley.recaf.services.navigation.Actions;
+import software.coley.recaf.services.mapping.view.BytecodeAnnotationService;
+import software.coley.recaf.services.mapping.view.ViewMappingConfig;
 import software.coley.recaf.services.source.AstResolveResult;
 import software.coley.recaf.services.source.AstService;
 import software.coley.recaf.services.tutorial.TutorialConfig;
@@ -47,9 +49,12 @@ public class AndroidDecompilerPane extends AbstractDecompilePane {
 	                             @Nonnull DecompilerManager decompilerManager,
 	                             @Nonnull JavaTypeIndexService javaTypeIndexService,
 	                             @Nonnull TabCompletionConfig tabCompletionConfig,
+	                             @Nonnull BytecodeAnnotationService annotationService,
+	                             @Nonnull ViewMappingConfig viewMappingConfig,
 	                             @Nonnull Actions actions) {
 		super(decompilerConfig, tutorialConfig, searchBar, astService, contextActionSupport, cellConfigurationService,
-				languageAssociation, decompilerManager, javaTypeIndexService, tabCompletionConfig);
+				languageAssociation, decompilerManager, javaTypeIndexService, tabCompletionConfig,
+				annotationService, viewMappingConfig);
 
 		// Install tools container with configurator
 		new AndroidDecompilerPaneConfigurator(toolsContainer, decompilerConfig, decompiler, decompilerManager);

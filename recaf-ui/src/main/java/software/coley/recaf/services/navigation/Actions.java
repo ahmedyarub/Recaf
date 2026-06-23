@@ -67,6 +67,7 @@ import software.coley.recaf.services.workspace.WorkspaceManager;
 import software.coley.recaf.ui.config.KeybindingConfig;
 import software.coley.recaf.ui.control.FontIconView;
 import software.coley.recaf.ui.control.graph.MethodCallGraphTreesPane;
+import software.coley.recaf.ui.control.richtext.Editor;
 import software.coley.recaf.ui.pane.analysis.AreaAnalysisPane;
 import software.coley.recaf.ui.control.popup.AddMemberPopup;
 import software.coley.recaf.ui.control.popup.ItemListSelectionPopup;
@@ -245,6 +246,14 @@ public class Actions implements Service {
 		this.memberReferenceSearchPaneProvider = memberReferenceSearchPaneProvider;
 		this.memberDeclarationSearchPaneProvider = memberDeclarationSearchPaneProvider;
 		this.instructionSearchPaneProvider = instructionSearchPaneProvider;
+	}
+
+	/**
+	 * @return Manager for navigation.
+	 */
+	@Nonnull
+	public NavigationManager getNavigationManager() {
+		return navigationManager;
 	}
 
 	/**
@@ -1639,6 +1648,120 @@ public class Actions implements Service {
 
 			return dockable;
 		});
+	}
+
+	/**
+	 * Opens an {@link AssemblerPane} for a class, field, or method at the given path,
+	 * then navigates to the assembler line corresponding to the given source line number.
+	 * <p>
+	 * If an assembler tab is already open for the given path, it is reused instead of
+	 * opening a duplicate. The assembler text uses {@code .line N} directives to associate
+	 * instructions with source lines. This method searches for the matching directive and
+	 * scrolls to that position.
+	 *
+	 * @param path
+	 * 		Path containing a class, field, or method to open.
+	 * @param sourceLine
+	 * 		1-indexed source line number from the decompiler.
+	 * 		The method will search for a {@code .line <sourceLine>} directive in the assembler text.
+	 * 		If <= 0, no navigation is performed (just opens the assembler).
+	 *
+	 * @return Navigable content with an assembler for the given class, field, or method.
+	 *
+	 * @throws IncompletePathException
+	 * 		When the path is missing parent elements.
+	 */
+	@Nonnull
+	public Navigable openAssemblerAtLine(@Nonnull PathNode<?> path, int sourceLine) throws IncompletePathException {
+		// Check if an assembler is already open for this path
+		AssemblerPane existingPane = null;
+		List<Navigable> children = navigationManager.getNavigableChildrenByPath(path);
+		for (Navigable child : children) {
+			if (child instanceof AssemblerPane ap) {
+				existingPane = ap;
+				break;
+			}
+		}
+
+		Navigable result;
+		boolean isExisting;
+		if (existingPane != null) {
+			// Reuse existing assembler tab
+			result = existingPane;
+			selectTab(existingPane);
+			existingPane.requestFocus();
+			isExisting = true;
+		} else {
+			// Open a new assembler tab
+			result = openAssembler(path);
+			isExisting = false;
+		}
+
+		if (sourceLine > 0 && result instanceof AssemblerPane assemblerPane) {
+			// For existing tabs the text is already loaded, navigate immediately.
+			// For new tabs, delay to allow disassembly to complete.
+			int delayMs = isExisting ? 50 : 500;
+			FxThreadUtil.delayedRun(delayMs, () -> navigateToSourceLine(assemblerPane, sourceLine));
+		}
+		return result;
+	}
+
+	/**
+	 * Searches the assembler editor for a {@code .line N} directive matching the given
+	 * source line and scrolls to it.
+	 *
+	 * @param assemblerPane
+	 * 		The assembler pane to navigate within.
+	 * @param sourceLine
+	 * 		Source line number to find.
+	 */
+	private void navigateToSourceLine(@Nonnull AssemblerPane assemblerPane, int sourceLine) {
+		Editor editor = assemblerPane.getEditor();
+		org.fxmisc.richtext.CodeArea area = editor.getCodeArea();
+		String text = area.getText();
+		if (text == null || text.isEmpty())
+			return;
+
+		// JASM uses "line N" (without dot prefix) as the line number directive
+		String lineDirective = "line " + sourceLine;
+		int targetParagraph = -1;
+
+		// Scan paragraphs for the exact line directive
+		int paragraphCount = area.getParagraphs().size();
+		for (int i = 0; i < paragraphCount; i++) {
+			String paragraphText = area.getParagraph(i).getText().trim();
+			if (paragraphText.equals(lineDirective)) {
+				targetParagraph = i;
+				break;
+			}
+		}
+
+		// If no exact match, find the nearest line directive
+		if (targetParagraph < 0) {
+			int bestLine = -1;
+			int bestDiff = Integer.MAX_VALUE;
+			for (int i = 0; i < paragraphCount; i++) {
+				String paragraphText = area.getParagraph(i).getText().trim();
+				if (paragraphText.startsWith("line ") && !paragraphText.startsWith("line_")) {
+					try {
+						int lineNum = Integer.parseInt(paragraphText.substring(5).trim());
+						int diff = Math.abs(lineNum - sourceLine);
+						if (diff < bestDiff) {
+							bestDiff = diff;
+							bestLine = i;
+						}
+					} catch (NumberFormatException ignored) {}
+				}
+			}
+			if (bestLine >= 0)
+				targetParagraph = bestLine;
+		}
+
+		if (targetParagraph >= 0) {
+			area.moveTo(targetParagraph, 0);
+			area.showParagraphAtCenter(targetParagraph);
+			area.requestFocus();
+		}
 	}
 
 	/**

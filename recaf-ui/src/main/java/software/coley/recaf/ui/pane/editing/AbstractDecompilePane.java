@@ -55,12 +55,16 @@ import software.coley.recaf.util.FxThreadUtil;
 import software.coley.recaf.util.Lang;
 import software.coley.recaf.util.StringDiff;
 import software.coley.recaf.util.StringUtil;
+import software.coley.recaf.services.mapping.view.BytecodeAnnotationService;
+import software.coley.recaf.services.mapping.view.ViewMappingConfig;
+import software.coley.recaf.ui.control.richtext.bytecode.BytecodeAnnotationGutterFactory;
 import software.coley.recaf.workspace.model.Workspace;
 import software.coley.sourcesolver.model.CompilationUnitModel;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -87,6 +91,9 @@ public class AbstractDecompilePane extends BorderPane implements ClassNavigable,
 	protected final DecompilerPaneConfig decompileConfig;
 	protected final TutorialConfig tutorialConfig;
 	protected final Editor editor;
+	protected final BytecodeAnnotationService annotationService;
+	protected final ViewMappingConfig viewMappingConfig;
+	protected final BytecodeAnnotationGutterFactory annotationGutterFactory;
 	protected ClassPathNode path;
 
 	protected AbstractDecompilePane(@Nonnull DecompilerPaneConfig decompileConfig,
@@ -98,12 +105,17 @@ public class AbstractDecompilePane extends BorderPane implements ClassNavigable,
 	                                @Nonnull FileTypeSyntaxAssociationService languageAssociation,
 	                                @Nonnull DecompilerManager decompilerManager,
 	                                @Nonnull JavaTypeIndexService javaTypeIndexService,
-	                                @Nonnull TabCompletionConfig tabCompletionConfig) {
+	                                @Nonnull TabCompletionConfig tabCompletionConfig,
+	                                @Nonnull BytecodeAnnotationService annotationService,
+	                                @Nonnull ViewMappingConfig viewMappingConfig) {
 		this.astService = astService;
 		this.contextActionSupport = contextActionSupport;
 		this.decompilerManager = decompilerManager;
 		this.decompileConfig = decompileConfig;
 		this.tutorialConfig = tutorialConfig;
+		this.annotationService = annotationService;
+		this.viewMappingConfig = viewMappingConfig;
+		this.annotationGutterFactory = new BytecodeAnnotationGutterFactory();
 
 		decompiler.setValue(decompilerManager.getTargetJvmDecompiler());
 		decompiler.addChangeListener((ob, old, cur) -> decompile());
@@ -114,6 +126,9 @@ public class AbstractDecompilePane extends BorderPane implements ClassNavigable,
 		editor.setSelectedBracketTracking(new SelectedBracketTracking());
 		editor.setProblemTracking(problemTracking);
 		editor.getRootLineGraphicFactory().addDefaultCodeGraphicFactories();
+		if (viewMappingConfig.getEnabled().getValue() && viewMappingConfig.isGutterMode()) {
+			editor.getRootLineGraphicFactory().addLineGraphicFactory(annotationGutterFactory);
+		}
 		contextActionSupport.install(editor);
 		if (tabCompletionConfig.isEnabledInJavaSource())
 			editor.setTabCompleter(new JavaTabCompleter(contextActionSupport, cellConfigurationService, javaTypeIndexService, tabCompletionConfig));
@@ -147,6 +162,14 @@ public class AbstractDecompilePane extends BorderPane implements ClassNavigable,
 	public void requestFocus(@Nonnull ClassMember member) {
 		contextActionSupport.select(member);
 		requestFocus();
+	}
+
+	/**
+	 * @return The editor component.
+	 */
+	@Nonnull
+	public Editor getEditor() {
+		return editor;
 	}
 
 	@Override
@@ -282,6 +305,27 @@ public class AbstractDecompilePane extends BorderPane implements ClassNavigable,
 	}
 
 	/**
+	 * Updates bytecode annotation data for the current class.
+	 * In gutter mode, sets the annotation data on the gutter factory.
+	 * In inline mode, prepends bytecode comment lines to the editor text.
+	 */
+	protected void updateBytecodeAnnotations() {
+		if (path == null) return;
+		ClassInfo classInfo = path.getValue();
+		if (!classInfo.isJvmClass()) return;
+
+		JvmClassInfo jvmClass = classInfo.asJvmClass();
+		Map<Integer, String> annotations = annotationService.buildSourceLineAnnotations(jvmClass);
+
+		if (viewMappingConfig.isGutterMode()) {
+			annotationGutterFactory.setAnnotations(annotations);
+		}
+		// Inline mode annotations are left for future implementation since
+		// modifying the editor text after decompilation interferes with
+		// AST parsing and recompilation. Gutter tooltips are the recommended default.
+	}
+
+	/**
 	 * Decompiles the class contained by the current {@link #path} and updates the {@link #editor}'s text
 	 * with the decompilation results.
 	 */
@@ -327,6 +371,11 @@ public class AbstractDecompilePane extends BorderPane implements ClassNavigable,
 
 					// Schedule AST parsing for context action support.
 					contextActionSupport.scheduleAstParse();
+
+					// Build bytecode annotations if enabled
+					if (viewMappingConfig.getEnabled().getValue() && resultType == DecompileResult.ResultType.SUCCESS) {
+						updateBytecodeAnnotations();
+					}
 
 					// Prevent undo from reverting to empty state.
 					editor.getCodeArea().getUndoManager().forgetHistory();

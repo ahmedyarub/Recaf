@@ -35,6 +35,8 @@ import software.coley.recaf.services.decompile.JvmDecompiler;
 import software.coley.recaf.services.cell.CellConfigurationService;
 import software.coley.recaf.services.info.association.FileTypeSyntaxAssociationService;
 import software.coley.recaf.services.navigation.Actions;
+import software.coley.recaf.services.mapping.view.BytecodeAnnotationService;
+import software.coley.recaf.services.mapping.view.ViewMappingConfig;
 import software.coley.recaf.services.source.AstResolveResult;
 import software.coley.recaf.services.source.AstService;
 import software.coley.recaf.services.tutorial.TutorialConfig;
@@ -104,9 +106,12 @@ public class JvmDecompilerPane extends AbstractDecompilePane {
 	                         @Nonnull JavacCompiler javac,
 	                         @Nonnull JavacCompilerConfig javacConfig,
 	                         @Nonnull TabCompletionConfig tabCompletionConfig,
+	                         @Nonnull BytecodeAnnotationService annotationService,
+	                         @Nonnull ViewMappingConfig viewMappingConfig,
 	                         @Nonnull Actions actions) {
 		super(decompileConfig, tutorialConfig, searchBar, astService, contextActionSupport, cellConfigurationService,
-				languageAssociation, decompilerManager, javaTypeIndexService, tabCompletionConfig);
+				languageAssociation, decompilerManager, javaTypeIndexService, tabCompletionConfig,
+				annotationService, viewMappingConfig);
 		this.javacDebug = new ObservableBoolean(javacConfig.getDefaultEmitDebug().getValue());
 		this.javacTarget = new ObservableInteger(javacConfig.getDefaultTargetVersion().getValue());
 		this.javacDownsampleTarget = new ObservableInteger(javacConfig.getDefaultDownsampleTargetVersion().getValue());
