@@ -84,11 +84,13 @@ public class FileMenu extends WorkspaceAwareMenu {
 		MenuItem itemAddToWorkspace = action("menu.file.addtoworkspace", CarbonIcons.WORKSPACE_IMPORT, this::addToWorkspace);
 		MenuItem itemExportPrimary = action("menu.file.exportapp", CarbonIcons.EXPORT, this::exportCurrent);
 		MenuItem itemViewChanges = action("menu.file.modifications", CarbonIcons.COMPARE, this::openChangeViewer);
+		MenuItem itemTogglePanel = action("menu.file.toggle-panel", CarbonIcons.OPEN_PANEL_FILLED_LEFT, dockingManager::toggleWorkspacePanel);
 		MenuItem itemClose = action("menu.file.close", CarbonIcons.TRASH_CAN, this::closeWorkspace);
 		itemAddToWorkspace.disableProperty().bind(hasWorkspace.not());
 		itemExportPrimary.disableProperty().bind(hasWorkspace.not().and(hasAgentWorkspace.not()));
 		itemViewChanges.disableProperty().set(true); // TODO: Not-implemented
 		// itemViewChanges.disableProperty().bind(hasWorkspace.not());
+		itemTogglePanel.disableProperty().bind(hasWorkspace.not());
 		itemClose.disableProperty().bind(hasWorkspace.not());
 
 		MenuItem itemQuit = action("menu.file.quit", CarbonIcons.CLOSE, this::quit);
@@ -102,6 +104,7 @@ public class FileMenu extends WorkspaceAwareMenu {
 		items.add(itemExportPrimary);
 		items.add(itemViewChanges);
 		items.add(separator());
+		items.add(itemTogglePanel);
 		items.add(itemClose);
 		items.add(itemQuit);
 
@@ -228,7 +231,7 @@ public class FileMenu extends WorkspaceAwareMenu {
 		OpenUrlPopup popup = openUrlProvider.get();
 		popup.show();
 		popup.requestInputFocus();
-		popup.setOnHiding(e -> openUrlProvider.destroy(popup));
+		popup.setOnHiding(_ -> openUrlProvider.destroy(popup));
 	}
 
 	/**

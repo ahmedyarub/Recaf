@@ -38,88 +38,76 @@ import java.util.Collections;
  */
 @Dependent
 public class WorkspaceExplorerPane extends BorderPane implements Navigable {
-	private final WorkspaceTree workspaceTree;
-	private final Workspace workspace;
+    private final WorkspaceTree workspaceTree;
+    private final Workspace workspace;
 
-	/**
-	 * @param listener
-	 * 		Workspace drag-and-drop listener.
-	 * @param workspaceTree
-	 * 		Tree to display workspace with.
-	 * @param workspaceManager
-	 * 		Manager to pull in current workspace from.
-	 */
-	@Inject
-	public WorkspaceExplorerPane(@Nonnull WorkspaceLoadingDropListener listener,
-	                             @Nonnull WorkspaceTree workspaceTree,
-	                             @Nonnull WorkspaceManager workspaceManager) {
-		this.workspaceTree = workspaceTree;
+    /**
+     * @param listener         Workspace drag-and-drop listener.
+     * @param workspaceTree    Tree to display workspace with.
+     * @param workspaceManager Manager to pull in current workspace from.
+     * @param dockingManager   Docking manager for workspace panel toggle.
+     */
+    @Inject
+    public WorkspaceExplorerPane(@Nonnull WorkspaceLoadingDropListener listener, @Nonnull WorkspaceTree workspaceTree, @Nonnull WorkspaceManager workspaceManager, @Nonnull DockingManager dockingManager) {
+        this.workspaceTree = workspaceTree;
 
-		// As we are the explorer pane, these items should be treated as declarations and not references.
-		workspaceTree.contextSourceObjectPropertyProperty().setValue(ContextSource.DECLARATION);
+        // As we are the explorer pane, these items should be treated as declarations and not references.
+        workspaceTree.contextSourceObjectPropertyProperty().setValue(ContextSource.DECLARATION);
 
-		// Add filter pane, and hook up key-events so the user can easily
-		// navigate between the tree and the filter.
-		WorkspaceTreeFilterPane workspaceTreeFilterPane = new WorkspaceTreeFilterPane(workspaceTree);
-		TreeFiltering.install(workspaceTreeFilterPane.getTextField(), workspaceTree);
+        // Add filter pane, and hook up key-events so the user can easily
+        // navigate between the tree and the filter.
+        WorkspaceTreeFilterPane workspaceTreeFilterPane = new WorkspaceTreeFilterPane(workspaceTree, dockingManager::toggleWorkspacePanel);
+        TreeFiltering.install(workspaceTreeFilterPane.getTextField(), workspaceTree);
 
-		// Initialize drag-drop support.
-		DragAndDrop.installFileSupport(this, listener);
+        // Initialize drag-drop support.
+        DragAndDrop.installFileSupport(this, listener);
 
-		// Layout
-		StackPane stack = new StackPane(workspaceTree);
-		setCenter(stack);
-		setBottom(workspaceTreeFilterPane);
+        // Layout
+        StackPane stack = new StackPane(workspaceTree);
+        setCenter(stack);
+        setBottom(workspaceTreeFilterPane);
 
-		// Populate tree
-		workspace = workspaceManager.getCurrent();
-		if (workspaceManager.hasCurrentWorkspace())
-			workspaceTree.createWorkspaceRoot(workspace);
+        // Populate tree
+        workspace = workspaceManager.getCurrent();
+        if (workspaceManager.hasCurrentWorkspace())
+            workspaceTree.createWorkspaceRoot(workspace);
 
-		// Add label to indicate when filter pane input results in the tree being empty.
-		// This should help out users if they forget they have something in the search bar and the tree looks empty.
-		Label noResultsLabel = new BoundLabel(Lang.getBinding("menu.search.noresults"));
-		noResultsLabel.setGraphic(new FontIconView(CarbonIcons.SEARCH));
-		noResultsLabel.setMouseTransparent(true);
-		noResultsLabel.setVisible(false);
-		noResultsLabel.setOpacity(0.5);
-		workspaceTreeFilterPane.currentPredicateProperty().addListener((ob, old, cur) -> {
-			TreeItem<PathNode<?>> root = workspaceTree.getRoot();
-			if (root != null) {
-				noResultsLabel.setVisible(root.getChildren().isEmpty());
-			} else {
-				noResultsLabel.setVisible(false);
-			}
-		});
-		StackPane.setAlignment(noResultsLabel, Pos.CENTER);
-		stack.getChildren().add(noResultsLabel);
-	}
-
-	/**
-	 * @return Tree displaying a workspace.
-	 */
-	@Nonnull
-	public WorkspaceTree getWorkspaceTree() {
-		return workspaceTree;
-	}
+        // Add label to indicate when filter pane input results in the tree being empty.
+        // This should help out users if they forget they have something in the search bar and the tree looks empty.
+        Label noResultsLabel = new BoundLabel(Lang.getBinding("menu.search.noresults"));
+        noResultsLabel.setGraphic(new FontIconView(CarbonIcons.SEARCH));
+        noResultsLabel.setMouseTransparent(true);
+        noResultsLabel.setVisible(false);
+        noResultsLabel.setOpacity(0.5);
+        workspaceTreeFilterPane.currentPredicateProperty().addListener((_, _, _) -> {
+            TreeItem<PathNode<?>> root = workspaceTree.getRoot();
+            if (root != null) {
+                noResultsLabel.setVisible(root.getChildren().isEmpty());
+            } else {
+                noResultsLabel.setVisible(false);
+            }
+        });
+        StackPane.setAlignment(noResultsLabel, Pos.CENTER);
+        stack.getChildren().add(noResultsLabel);
+    }
 
 	@Nullable
-	@Override
-	public PathNode<?> getPath() {
-		return PathNodes.workspacePath(workspace);
-	}
+    @Override
+    public PathNode<?> getPath() {
+        return PathNodes.workspacePath(workspace);
+    }
 
-	@Nonnull
-	@Override
-	public Collection<Navigable> getNavigableChildren() {
-		return Collections.emptyList();
-	}
+    @Nonnull
+    @Override
+    public Collection<Navigable> getNavigableChildren() {
+        return Collections.emptyList();
+    }
 
-	@Override
-	public void disable() {
-		FxThreadUtil.run(() -> {
-			workspaceTree.setRoot(null);
-			setDisable(true);
-		});
-	}
+    @Override
+    public void disable() {
+        FxThreadUtil.run(() -> {
+            workspaceTree.setRoot(null);
+            setDisable(true);
+        });
+    }
 }

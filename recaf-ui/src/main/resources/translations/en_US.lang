@@ -36,6 +36,7 @@ menu.file.exportapp=Export application
 menu.file.exportworkspace=Export workspace config
 menu.file.modifications=View modifications
 menu.file.recent=Recent
+menu.file.toggle-panel=Toggle Workspace Panel
 menu.file.close=Close
 menu.file.quit=Quit
 menu.goto.class=Go to class
