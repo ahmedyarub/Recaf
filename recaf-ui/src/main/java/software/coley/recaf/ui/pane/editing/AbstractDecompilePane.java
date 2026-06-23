@@ -83,14 +83,6 @@ public class AbstractDecompilePane extends BorderPane implements ClassNavigable,
 	protected final ObservableObject<JvmDecompiler> decompiler = new ObservableObject<>(NoopJvmDecompiler.getInstance());
 	protected final ObservableBoolean decompileOutputErrored = new ObservableBoolean(false);
 	protected final ObservableBoolean decompileInProgress = new ObservableBoolean(false);
-
-	/**
-	 * @return Observable boolean representing if decompilation is currently in progress.
-	 */
-	@Nonnull
-	public ObservableBoolean getDecompileInProgress() {
-		return decompileInProgress;
-	}
 	protected final AtomicBoolean updateLock = new AtomicBoolean();
 	protected final ProblemTracking problemTracking = new ProblemTracking();
 	protected final AstService astService;
@@ -178,6 +170,14 @@ public class AbstractDecompilePane extends BorderPane implements ClassNavigable,
 	@Nonnull
 	public Editor getEditor() {
 		return editor;
+	}
+
+	/**
+	 * @return Observable boolean representing if decompilation is currently in progress.
+	 */
+	@Nonnull
+	public ObservableBoolean getDecompileInProgress() {
+		return decompileInProgress;
 	}
 
 	@Override

@@ -1,13 +1,12 @@
 package software.coley.recaf.services.session;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import javafx.scene.Node;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
-import software.coley.bentofx.dockable.Dockable;
 import software.coley.recaf.analytics.logging.Logging;
 import software.coley.recaf.cdi.UiInitializationEvent;
 import software.coley.recaf.path.ClassPathNode;
@@ -16,7 +15,6 @@ import software.coley.recaf.path.PathNode;
 import software.coley.recaf.services.Service;
 import software.coley.recaf.services.navigation.Actions;
 import software.coley.recaf.services.navigation.Navigable;
-import software.coley.recaf.services.navigation.NavigationManager;
 import software.coley.recaf.services.workspace.WorkspaceManager;
 import software.coley.recaf.services.workspace.WorkspaceOpenListener;
 import software.coley.recaf.ui.config.RecentFilesConfig;
@@ -26,6 +24,7 @@ import software.coley.recaf.ui.docking.DockingManager;
 import software.coley.recaf.util.FxThreadUtil;
 import software.coley.recaf.workspace.PathLoadingManager;
 import software.coley.recaf.workspace.model.Workspace;
+import software.coley.recaf.services.window.WindowManager;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,9 +36,6 @@ import java.util.List;
  *
  * @author Matt Coley
  */
-import software.coley.recaf.services.window.WindowManager;
-import javafx.stage.Stage;
-
 @ApplicationScoped
 public class SessionManager implements Service, WorkspaceOpenListener {
 	public static final String ID = "session";
@@ -51,7 +47,6 @@ public class SessionManager implements Service, WorkspaceOpenListener {
 	private final PathLoadingManager pathLoadingManager;
 	private final WorkspaceManager workspaceManager;
 	private final Actions actions;
-	private final NavigationManager navigationManager;
 	private final WindowManager windowManager;
 
 	private boolean isRestoring = false;
@@ -63,7 +58,6 @@ public class SessionManager implements Service, WorkspaceOpenListener {
 	                      @Nonnull PathLoadingManager pathLoadingManager,
 	                      @Nonnull WorkspaceManager workspaceManager,
 	                      @Nonnull Actions actions,
-	                      @Nonnull NavigationManager navigationManager,
 	                      @Nonnull WindowManager windowManager) {
 		this.config = config;
 		this.recentFilesConfig = recentFilesConfig;
@@ -71,7 +65,6 @@ public class SessionManager implements Service, WorkspaceOpenListener {
 		this.pathLoadingManager = pathLoadingManager;
 		this.workspaceManager = workspaceManager;
 		this.actions = actions;
-		this.navigationManager = navigationManager;
 		this.windowManager = windowManager;
 
 		workspaceManager.addWorkspaceOpenListener(this);
@@ -367,7 +360,6 @@ public class SessionManager implements Service, WorkspaceOpenListener {
 		}
 	}
 
-	@PreDestroy
 	public void saveSessionState() {
 		if (!config.getRestoreSession().getValue())
 			return;

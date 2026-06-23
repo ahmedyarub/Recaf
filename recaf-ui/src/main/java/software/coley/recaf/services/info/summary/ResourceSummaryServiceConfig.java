@@ -16,13 +16,13 @@ import software.coley.recaf.services.ServiceConfig;
  */
 @ApplicationScoped
 public class ResourceSummaryServiceConfig extends BasicConfigContainer implements ServiceConfig {
-	private final ObservableBoolean summarizeOnOpen = new ObservableBoolean(true);
+	private final ObservableBoolean summarizeOnOpen = new ObservableBoolean(false);
 
 	@Inject
 	public ResourceSummaryServiceConfig() {
 		super(ConfigGroups.SERVICE_ANALYSIS, ResourceSummaryService.SERVICE_ID + CONFIG_SUFFIX);
 		// Add values
-		addValue(new BasicConfigValue<>("summarize-on-open", boolean.class, summarizeOnOpen));
+		addValue(new BasicConfigValue<>("summarize-on-workspace-open", boolean.class, summarizeOnOpen));
 	}
 
 	/**

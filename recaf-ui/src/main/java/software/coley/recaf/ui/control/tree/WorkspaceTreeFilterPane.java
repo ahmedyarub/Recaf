@@ -37,7 +37,17 @@ public class WorkspaceTreeFilterPane extends BorderPane {
 	public WorkspaceTreeFilterPane(@Nonnull WorkspaceTree tree) {
 		BoundToggleIcon toggleSensitivity = new BoundToggleIcon(new FontIconView(CarbonIcons.LETTER_CC), caseSensitivity).withTooltip("misc.casesensitive");
 		toggleSensitivity.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.ACCENT, Styles.FLAT, Styles.SMALL);
-		textField.rightProperty().set(toggleSensitivity);
+
+		javafx.scene.control.Button collapseAll = new javafx.scene.control.Button();
+		collapseAll.setGraphic(new FontIconView(CarbonIcons.COLLAPSE_ALL));
+		javafx.scene.control.Tooltip collapseTooltip = new javafx.scene.control.Tooltip();
+		collapseTooltip.textProperty().bind(Lang.getBinding("misc.collapse_all"));
+		collapseAll.setTooltip(collapseTooltip);
+		collapseAll.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.ACCENT, Styles.FLAT, Styles.SMALL);
+		collapseAll.setOnAction(e -> software.coley.recaf.ui.control.tree.TreeItems.recurseClose(tree, tree.getRoot()));
+
+		javafx.scene.layout.HBox rightContainer = new javafx.scene.layout.HBox(collapseAll, toggleSensitivity);
+		textField.rightProperty().set(rightContainer);
 
 		textField.promptTextProperty().bind(Lang.getBinding("workspace.filter-prompt"));
 		setCenter(textField);
