@@ -88,9 +88,14 @@ public class UIMain {
 		WindowScaleConfig scaleConfig = recaf.get(WindowScaleConfig.class);
 
 		double scale = scaleConfig.getScale();
-		System.setProperty("sun.java2d.uiScale", String.format("%.0f%%", 100 * scale));
-		System.setProperty("glass.win.uiScale", String.valueOf(scale));
-		System.setProperty("glass.gtk.uiScale", String.valueOf(scale));
+
+		// Only override system DPI settings when a non-default scale is configured.
+		// When scale is 1.0 (default), let JavaFX auto-detect the system DPI.
+		if (Double.compare(scale, 1.0) != 0) {
+			System.setProperty("sun.java2d.uiScale", String.format("%.0f%%", 100 * scale));
+			System.setProperty("glass.win.uiScale", String.valueOf(scale));
+			System.setProperty("glass.gtk.uiScale", String.valueOf(scale));
+		}
 	}
 
 	/**
