@@ -76,7 +76,14 @@ public class RecafApplication extends Application {
 		stage.setScene(scene);
 		stage.getIcons().add(Icons.getImage(Icons.LOGO));
 		stage.setTitle("Recaf");
-		stage.setOnCloseRequest(e -> ExitDebugLoggingHook.exit(0));
+		stage.setOnCloseRequest(e -> {
+			try {
+				recaf.get(software.coley.recaf.services.session.SessionManager.class).saveSessionState();
+			} catch (Exception ex) {
+				// Ignored
+			}
+			ExitDebugLoggingHook.exit(0);
+		});
 		stage.show();
 
 		// Register main window

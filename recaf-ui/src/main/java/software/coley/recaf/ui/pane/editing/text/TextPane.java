@@ -67,6 +67,14 @@ public class TextPane extends BorderPane implements FileNavigable, UpdatableNavi
 	}
 
 	/**
+	 * @return The editor component.
+	 */
+	@Nonnull
+	public Editor getEditor() {
+		return editor;
+	}
+
+	/**
 	 * Called when {@link KeybindingConfig#getSave()} is pressed.
 	 * <br>
 	 * Updates the {@link FileInfo} in the containing {@link FileBundle}.
