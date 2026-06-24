@@ -62,6 +62,8 @@ public class KeybindingConfig extends BasicConfigContainer {
 	private static final String ID_CLOSE_TAB = "editor.closetab";
 	private static final String ID_RENAME = "editor.rename";
 	private static final String ID_GOTO = "editor.goto";
+	private static final String ID_SEARCH = "menu.search";
+	private static final String ID_OPEN_WORKSPACE = "menu.file.openworkspace";
 	private static final String ID_EXPORT = "workspace.export";
 
 	private final BindingBundle bundle;
@@ -79,8 +81,10 @@ public class KeybindingConfig extends BasicConfigContainer {
 				createBindForPlatform(ID_UNDO, CONTROL, U),
 				createBindForPlatform(ID_CLOSE_TAB, CONTROL, W),
 				createBindForPlatform(ID_RENAME, ALT, R),
-				createBindForPlatform(ID_GOTO, F3),
-				createBindForPlatform(ID_EXPORT, CONTROL, E)
+				createBindForPlatform(ID_GOTO, F4), // Note: F3 previously
+				createBindForPlatform(ID_SEARCH, F3),
+				createBindForPlatform(ID_EXPORT, CONTROL, E),
+				createBindForPlatform(ID_OPEN_WORKSPACE, CONTROL, O)
 		));
 		addValue(new BasicMapConfigValue<>("bundle", BindingBundle.class, String.class, Binding.class, bundle));
 
@@ -197,11 +201,27 @@ public class KeybindingConfig extends BasicConfigContainer {
 	}
 
 	/**
-	 * @return Keybinding for exporting the current workspace.
+	 * @return Keybinding for export operations.
 	 */
 	@Nonnull
 	public Binding getExport() {
 		return Objects.requireNonNull(bundle.get(ID_EXPORT));
+	}
+
+	/**
+	 * @return Keybinding for opening the search menu/window.
+	 */
+	@Nonnull
+	public Binding getSearch() {
+		return Objects.requireNonNull(bundle.get(ID_SEARCH));
+	}
+
+	/**
+	 * @return Keybinding for opening a workspace (file).
+	 */
+	@Nonnull
+	public Binding getOpenWorkspace() {
+		return Objects.requireNonNull(bundle.get(ID_OPEN_WORKSPACE));
 	}
 
 	/**

@@ -65,9 +65,9 @@
 - [ ] Add a drop-down list with most recent searches that is also used as auto-complete in the search box
 
 ## Priority 12: Keyboard Shortcuts
-- [ ] Add keyboard shortcuts like F3 for search and Ctrl+O for open file
+- [x] Add keyboard shortcuts like F3 for search and Ctrl+O for open file
 
 ## Priority 13: UI and Editor Improvements
-- [ ] The search box should always be on top
+- [x] The search box should always be on top
 - [ ] Add an option to wrap text in the editor
 - [ ] Fix in-file search when there is a very long line (caret should move to the current result)

@@ -188,7 +188,7 @@ public class FileMenu extends WorkspaceAwareMenu {
 	/**
 	 * Display the workspace wizard.
 	 */
-	private void openWorkspace() {
+	public void openWorkspace() {
 		RecafStage stage = new RecafStage().hideOnEscape();
 		windowManager.registerAnonymous(stage);
 		WorkspaceBuilderPane root = new WorkspaceBuilderPane(pathLoadingManager, recentFilesConfig, () -> FxThreadUtil.run(stage::close));

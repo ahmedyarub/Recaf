@@ -65,6 +65,10 @@ public class RecafApplication extends Application {
 				Stage quickNav = windowManager.getQuickNav();
 				quickNav.show();
 				quickNav.requestFocus();
+			} else if (keybindingConfig.getSearch().match(event)) {
+				recaf.get(software.coley.recaf.services.navigation.Actions.class).openNewStringSearch();
+			} else if (keybindingConfig.getOpenWorkspace().match(event)) {
+				recaf.get(software.coley.recaf.ui.menubar.FileMenu.class).openWorkspace();
 			} else if (keybindingConfig.getExport().match(event) && workspaceManager.hasCurrentWorkspace()) {
 				recaf.get(PathExportingManager.class).export(workspaceManager.getCurrent());
 			}
