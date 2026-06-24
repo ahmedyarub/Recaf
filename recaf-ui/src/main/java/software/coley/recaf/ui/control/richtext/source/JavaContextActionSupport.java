@@ -119,7 +119,7 @@ public class JavaContextActionSupport implements EditorComponent, UpdatableNavig
 	private int lastSourceHash;
 	private long lastTextChangeTimestamp;
 	private ClassPathNode path;
-	private Runnable queuedSelectionTask;
+	private final java.util.List<Runnable> queuedSelectionTasks = new java.util.ArrayList<>();
 	private String className;
 	private CompilationUnitModel unit;
 	private ResolverAdapter resolver;
@@ -145,8 +145,9 @@ public class JavaContextActionSupport implements EditorComponent, UpdatableNavig
 
 	@PreDestroy
 	private void cleanup() {
-		lastFuture.cancel(true);
-		queuedSelectionTask = null;
+		if (lastFuture != null && !lastFuture.isDone())
+			lastFuture.cancel(true);
+		queuedSelectionTasks.clear();
 		parseThreadPool.close();
 	}
 
@@ -238,9 +239,8 @@ public class JavaContextActionSupport implements EditorComponent, UpdatableNavig
 		CompilationUnitModel localUnit = unit;
 		ResolverAdapter localResolver = resolver;
 		if (localUnit == null || localResolver == null) {
-			queuedSelectionTask = () -> select(member);
+			queuedSelectionTasks.add(() -> select(member));
 		} else {
-			queuedSelectionTask = null;
 			try {
 				for (ClassModel declaredClass : localUnit.getDeclaredClasses()) {
 					if (member.isField()) {
@@ -289,16 +289,68 @@ public class JavaContextActionSupport implements EditorComponent, UpdatableNavig
 	}
 
 	/**
+	 * Selects the given text in the AST / editor.
+	 *
+	 * @param text
+	 * 		Text to select.
+	 */
+	public void select(@Nonnull String text) {
+		logger.info("JavaContextActionSupport.select(String) called for text: '{}'", text);
+		CompilationUnitModel localUnit = unit;
+		ResolverAdapter localResolver = resolver;
+		if (localUnit == null || localResolver == null) {
+			logger.info("AST not yet parsed (unit or resolver is null). Queuing selection task.");
+			final String finalText = text;
+			queuedSelectionTasks.add(() -> select(finalText));
+		} else {
+			try {
+				logger.info("AST parsed. Attempting to select text '{}'", text);
+				String editorText = editor.getText();
+				logger.info("Editor text length: {}", editorText.length());
+				if (editorText.length() > 0) {
+					logger.info("Editor text starts with: '{}'", editorText.substring(0, Math.min(50, editorText.length())).replace("\n", "\\n"));
+				}
+				int index = editorText.indexOf(text);
+				logger.info("Index of text in editor: {}", index);
+				if (index == -1 && text.length() > 20) {
+					String substring = text.substring(0, 20);
+					index = editorText.indexOf(substring);
+					logger.info("Fallback index of substring '{}' in editor: {}", substring, index);
+					if (index >= 0) {
+						text = substring; // Select the substring instead
+					}
+				}
+				
+				if (index >= 0) {
+					CodeArea area = editor.getCodeArea();
+					logger.info("Calling selectRange({}, {})", index + text.length(), index);
+					area.selectRange(index + text.length(), index);
+					software.coley.recaf.util.FxThreadUtil.delayedRun(100, () -> {
+						logger.info("Executing delayed showParagraphAtCenter({})", area.getCurrentParagraph());
+						editor.showParagraphAtCenter(area.getCurrentParagraph());
+					});
+				} else {
+					logger.warn("Text '{}' not found in editor!", text);
+				}
+			} catch (Throwable t) {
+				logger.error("Unhandled exception in Java context support - select string '{}'", text, t);
+			}
+		}
+	}
+
+	/**
 	 * Selects the range in the {@link #editor}.
 	 * Must be called on the FX thread.
 	 *
 	 * @param range
 	 * 		Range to select.
 	 */
-	private void selectRange(@Nonnull Range range) {
+	private void selectRange(@Nonnull software.coley.sourcesolver.util.Range range) {
 		CodeArea area = editor.getCodeArea();
 		area.selectRange(range.end(), range.begin());
-		editor.showParagraphAtCenter(area.getCurrentParagraph());
+		software.coley.recaf.util.FxThreadUtil.delayedRun(100, () -> {
+			editor.showParagraphAtCenter(area.getCurrentParagraph());
+		});
 	}
 
 	/**
@@ -449,9 +501,16 @@ public class JavaContextActionSupport implements EditorComponent, UpdatableNavig
 					populateInheritanceTracking();
 					populateFoldTracking();
 
-					// Run queued selection task
-					if (queuedSelectionTask != null)
-						FxThreadUtil.run(queuedSelectionTask);
+					// Run queued selection tasks
+					if (!queuedSelectionTasks.isEmpty()) {
+						java.util.List<Runnable> tasksToRun = new java.util.ArrayList<>(queuedSelectionTasks);
+						queuedSelectionTasks.clear();
+						FxThreadUtil.run(() -> {
+							for (Runnable task : tasksToRun) {
+								task.run();
+							}
+						});
+					}
 				}
 			} catch (Throwable ex) {
 				long diffMs = (System.currentTimeMillis() - start);

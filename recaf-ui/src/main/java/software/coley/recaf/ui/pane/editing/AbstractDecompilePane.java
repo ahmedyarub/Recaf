@@ -180,6 +180,14 @@ public class AbstractDecompilePane extends BorderPane implements ClassNavigable,
 		return decompileInProgress;
 	}
 
+	/**
+	 * @return The Java context action support.
+	 */
+	@Nonnull
+	public JavaContextActionSupport getContextActionSupport() {
+		return contextActionSupport;
+	}
+
 	@Override
 	public void requestFocus() {
 		// Delegate focus to the editor.

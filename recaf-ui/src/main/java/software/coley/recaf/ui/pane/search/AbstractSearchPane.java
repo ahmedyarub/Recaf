@@ -63,6 +63,7 @@ import java.util.function.Predicate;
  * @author Matt Coley
  */
 public abstract class AbstractSearchPane extends BorderPane implements Navigable {
+	private static final org.slf4j.Logger logger = software.coley.recaf.analytics.logging.Logging.get(AbstractSearchPane.class);
 	private final WorkspaceManager workspaceManager;
 	private final SearchService searchService;
 	private final CellConfigurationService configurationService;
@@ -74,6 +75,7 @@ public abstract class AbstractSearchPane extends BorderPane implements Navigable
 	private ActionButton searchOptionsButton;
 	private Popover searchOptionsPopover;
 	private CancellableSearchFeedback lastSearchFeedback;
+	private final java.util.Map<PathNode<?>, Result<?>> resultMapping = new java.util.concurrent.ConcurrentHashMap<>();
 
 	/**
 	 * Create the base outline of a search panel capabilities.
@@ -301,11 +303,37 @@ public abstract class AbstractSearchPane extends BorderPane implements Navigable
 		tree.setOnMousePressed(e -> {
 			if (e.getClickCount() == 2 && e.isPrimaryButtonDown()) {
 				var item = tree.getSelectionModel().getSelectedItem();
+				logger.debug("Double clicked on search result item: {}", item);
 				if (item != null && item.isLeaf()) {
 					try {
-						actions.gotoDeclaration(item.getValue());
+						PathNode<?> path = item.getValue();
+						logger.debug("Item path: {}", path);
+						Navigable navigable = actions.gotoDeclaration(path);
+						logger.debug("Navigable returned from actions.gotoDeclaration: {}", navigable);
+						Result<?> result = resultMapping.get(path);
+						logger.debug("Result from resultMapping: {}", result);
+
+						if (result != null) {
+							String targetString = null;
+							if (result instanceof software.coley.recaf.services.search.result.StringResult stringResult)
+								targetString = stringResult.getValue();
+							else if (result instanceof software.coley.recaf.services.search.result.NumberResult numberResult)
+								targetString = numberResult.getValue().toString();
+
+							logger.debug("Extracted targetString: {}", targetString);
+
+							if (targetString != null && navigable instanceof software.coley.recaf.ui.pane.editing.jvm.JvmClassPane classPane) {
+								classPane.setEditorType(software.coley.recaf.ui.pane.editing.jvm.JvmClassEditorType.DECOMPILE);
+								if (classPane.getDisplay() instanceof software.coley.recaf.ui.pane.editing.AbstractDecompilePane decompilePane) {
+									logger.info("AbstractSearchPane: dispatching select('{}') to decompilePane", targetString);
+									decompilePane.getContextActionSupport().select(targetString);
+								}
+							} else {
+								logger.debug("targetString is null or navigable is not JvmClassPane (is {})", navigable);
+							}
+						}
 					} catch (IncompletePathException ignored) {
-						// ignored
+						logger.error("IncompletePathException during double-click navigation", ignored);
 					}
 				}
 			}
@@ -359,6 +387,7 @@ public abstract class AbstractSearchPane extends BorderPane implements Navigable
 
 		// Cancel last search before we start a new one.
 		cancelLastSearch();
+		resultMapping.clear();
 
 		// Skip if the query couldn't be built (invalid inputs most likely)
 		Query query = buildQuery();
@@ -430,7 +459,11 @@ public abstract class AbstractSearchPane extends BorderPane implements Navigable
 
 		@Override
 		public boolean doAcceptResult(@Nonnull Result<?> result) {
-			return resultFilter.test(result);
+			boolean accepted = resultFilter.test(result);
+			if (accepted) {
+				resultMapping.put(result.getPath(), result);
+			}
+			return accepted;
 		}
 	}
 

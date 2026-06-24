@@ -286,6 +286,10 @@ public class Actions implements Service {
 			if (parent == null)
 				throw new IncompletePathException(FileInfo.class);
 			return gotoDeclaration(parent);
+		} else if (path.getParent() instanceof ClassMemberPathNode classMemberPath) {
+			return gotoDeclaration(classMemberPath);
+		} else if (path.getParent() instanceof ClassPathNode classPathNode) {
+			return gotoDeclaration(classPathNode);
 		}
 		throw new IncompletePathException(path.getValueType());
 	}
