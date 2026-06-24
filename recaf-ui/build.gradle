@@ -15,6 +15,7 @@ javafx {
 dependencies {
     implementation project(':recaf-core')
     testImplementation(testFixtures(project(":recaf-core")))
+    compileOnly 'com.google.j2objc:j2objc-annotations:2.8'
 
     implementation(libs.acc.agent)
     implementation(libs.atlantafx)

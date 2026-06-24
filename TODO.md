@@ -71,3 +71,6 @@
 - [x] The search box should always be on top
 - [ ] Add an option to wrap text in the editor
 - [ ] Fix in-file search when there is a very long line (caret should move to the current result)
+
+## Priority 14: Bookmarks
+- [ ] Add bookmarks feature that includes a description, file, line number, and position

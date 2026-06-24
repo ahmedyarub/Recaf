@@ -163,6 +163,10 @@ public class SearchBar implements EditorComponent, EventHandler<KeyEvent> {
 
 			// Parent setup done last since we initialize some controls it will depend on above.
 			super.setup();
+
+			// Setup auto-complete for the replace input
+			setupAutoComplete(replaceInput, pastReplaces);
+			updatePastListing(oldReplaces, pastReplaces, replaceInput);
 		}
 
 		@Override

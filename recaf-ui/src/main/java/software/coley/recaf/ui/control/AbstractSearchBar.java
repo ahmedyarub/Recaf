@@ -145,6 +145,9 @@ public abstract class AbstractSearchBar extends VBox {
 		// When past searches list is modified, update old search menu.
 		updatePastListing(oldSearches, pastSearches, searchInput);
 
+		// Setup auto-complete for the search input
+		setupAutoComplete(searchInput, pastSearches);
+
 		// Layout
 		setupLayout();
 	}
@@ -181,6 +184,21 @@ public abstract class AbstractSearchBar extends VBox {
 		// Clear old searches if there are too many
 		while (pastSearches.size() > MAX_HISTORY)
 			pastSearches.removeLast();
+	}
+
+	/**
+	 * Records the search query to the past searches history.
+	 *
+	 * @param query
+	 * 		The search query to record.
+	 */
+	public void recordSearch(@Nonnull String query) {
+		if (query != null && !query.isBlank()) {
+			pastSearches.remove(query);
+			pastSearches.add(0, query);
+			while (pastSearches.size() > MAX_HISTORY)
+				pastSearches.removeLast();
+		}
 	}
 
 	/**
@@ -227,7 +245,8 @@ public abstract class AbstractSearchBar extends VBox {
 			List<ActionMenuItem> items = list.stream()
 					.map(text -> new ActionMenuItem(text, () -> {
 						input.setText(text);
-						requestSearchFocus();
+						input.requestFocus();
+						input.positionCaret(text.length());
 					}))
 					.toList();
 			if (items.isEmpty()) {
@@ -238,6 +257,51 @@ public abstract class AbstractSearchBar extends VBox {
 				contextMenu.getItems().setAll(items);
 				button.setOnMousePressed(e -> contextMenu.show(button, e.getScreenX(), e.getScreenY()));
 			}
+		});
+	}
+
+	/**
+	 * Binds auto-completion to an input field based on a list of past items.
+	 *
+	 * @param input
+	 * 		Input to apply text to.
+	 * @param list
+	 * 		Source list to pull values from.
+	 */
+	protected void setupAutoComplete(@Nonnull CustomTextField input, @Nonnull ObservableList<String> list) {
+		ContextMenu autoCompletePopup = new ContextMenu();
+		autoCompletePopup.setAutoHide(true);
+
+		input.textProperty().addListener((ob, old, cur) -> {
+			if (cur == null || cur.isEmpty() || !input.isFocused()) {
+				autoCompletePopup.hide();
+				return;
+			}
+			List<ActionMenuItem> items = list.stream()
+					.filter(text -> text.toLowerCase().contains(cur.toLowerCase()) && !text.equals(cur))
+					.distinct()
+					.map(text -> new ActionMenuItem(text, () -> {
+						input.setText(text);
+						input.requestFocus();
+						input.positionCaret(text.length());
+					}))
+					.toList();
+
+			if (items.isEmpty()) {
+				autoCompletePopup.hide();
+			} else {
+				autoCompletePopup.getItems().setAll(items);
+				if (!autoCompletePopup.isShowing() && input.getScene() != null && input.getScene().getWindow() != null) {
+					javafx.geometry.Point2D p = input.localToScreen(0.0, input.getHeight());
+					if (p != null) {
+						autoCompletePopup.show(input, p.getX(), p.getY());
+					}
+				}
+			}
+		});
+
+		input.focusedProperty().addListener((ob, old, cur) -> {
+			if (!cur) autoCompletePopup.hide();
 		});
 	}
 }

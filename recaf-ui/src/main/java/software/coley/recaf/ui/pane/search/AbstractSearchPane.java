@@ -52,10 +52,18 @@ import software.coley.recaf.workspace.model.Workspace;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+
+import software.coley.recaf.ui.control.ActionMenuItem;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.TextField;
+import javafx.collections.ObservableList;
+import javafx.collections.FXCollections;
+import javafx.scene.input.KeyCode;
 
 /**
  * Common base capabilities for search panels.
@@ -64,6 +72,8 @@ import java.util.function.Predicate;
  */
 public abstract class AbstractSearchPane extends BorderPane implements Navigable {
 	private static final org.slf4j.Logger logger = software.coley.recaf.analytics.logging.Logging.get(AbstractSearchPane.class);
+	private static final ObservableList<String> pastSearches = FXCollections.observableArrayList();
+	private static final int MAX_HISTORY = 10;
 	private final WorkspaceManager workspaceManager;
 	private final SearchService searchService;
 	private final CellConfigurationService configurationService;
@@ -142,6 +152,15 @@ public abstract class AbstractSearchPane extends BorderPane implements Navigable
 		setTop(input);
 		setCenter(liveResultsDisplay);
 
+		sceneProperty().addListener((ob, old, cur) -> {
+			if (cur != null) {
+				software.coley.recaf.util.FxThreadUtil.delayedRun(10, () -> {
+					Node field = input.lookup(".text-field");
+					if (field != null) field.requestFocus();
+				});
+			}
+		});
+
 		liveResults.addListener((ob, old, cur) -> {
 			if (cur) {
 				setCenter(liveResultsDisplay);
@@ -150,6 +169,61 @@ public abstract class AbstractSearchPane extends BorderPane implements Navigable
 			}
 		});
 		setupSearchOptionsListener();
+	}
+
+	/**
+	 * Setup auto-complete dropdown for the given text field.
+	 *
+	 * @param input
+	 * 		Text field to apply autocomplete to.
+	 */
+	protected void setupAutoComplete(@Nonnull TextField input) {
+		ContextMenu autoCompletePopup = new ContextMenu();
+		autoCompletePopup.setAutoHide(true);
+
+		input.textProperty().addListener((ob, old, cur) -> {
+			if (cur == null || cur.isEmpty() || !input.isFocused()) {
+				autoCompletePopup.hide();
+				return;
+			}
+			List<ActionMenuItem> items = pastSearches.stream()
+					.filter(text -> text.toLowerCase().contains(cur.toLowerCase()) && !text.equals(cur))
+					.distinct()
+					.map(text -> new ActionMenuItem(text, () -> {
+						input.setText(text);
+						input.requestFocus();
+						input.positionCaret(text.length());
+					}))
+					.toList();
+
+			if (items.isEmpty()) {
+				autoCompletePopup.hide();
+			} else {
+				autoCompletePopup.getItems().setAll(items);
+				if (!autoCompletePopup.isShowing() && input.getScene() != null && input.getScene().getWindow() != null) {
+					javafx.geometry.Point2D p = input.localToScreen(0.0, input.getHeight());
+					if (p != null) {
+						autoCompletePopup.show(input, p.getX(), p.getY());
+					}
+				}
+			}
+		});
+
+		input.focusedProperty().addListener((ob, old, cur) -> {
+			if (!cur) autoCompletePopup.hide();
+		});
+
+		input.setOnKeyPressed(e -> {
+			if (e.getCode() == KeyCode.ENTER) {
+				String text = input.getText();
+				if (text != null && !text.isBlank()) {
+					pastSearches.remove(text);
+					pastSearches.add(0, text);
+					while (pastSearches.size() > MAX_HISTORY)
+						pastSearches.removeLast();
+				}
+			}
+		});
 	}
 
 	/**

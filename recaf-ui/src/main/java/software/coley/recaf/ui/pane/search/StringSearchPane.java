@@ -61,6 +61,7 @@ public class StringSearchPane extends AbstractSearchPane {
 				.filter(s -> !KEY_ANYTHING.equals(s) && !KEY_NOTHING.equals(s))
 				.sorted().toList();
 		TextField textField = new TextField();
+		setupAutoComplete(textField);
 		ComboBox<String> modeCombo = new BoundBiDiComboBox<>(stringPredicateId, stringPredicates,
 				ToStringConverter.from(s -> Lang.get(StringPredicate.TRANSLATION_PREFIX + s)));
 		modeCombo.getSelectionModel().select(StringPredicateProvider.KEY_CONTAINS);

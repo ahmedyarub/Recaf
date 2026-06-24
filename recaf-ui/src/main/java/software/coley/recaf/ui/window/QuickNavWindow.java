@@ -300,6 +300,19 @@ public class QuickNavWindow extends AbstractIdentifiableStage {
 			});
 		}
 
+		tabs.getSelectionModel().selectedItemProperty().addListener((ob, old, cur) -> {
+			if (cur != null && cur.getContent() instanceof ContentPaneBase content) {
+				content.focusSearchBar();
+			}
+		});
+
+		setOnShown(e -> {
+			Tab selectedTab = tabs.getSelectionModel().getSelectedItem();
+			if (selectedTab != null && selectedTab.getContent() instanceof ContentPaneBase content) {
+				content.focusSearchBar();
+			}
+		});
+
 		// Layout
 		titleProperty().bind(Lang.getBinding("dialog.quicknav"));
 		setMinWidth(300);
@@ -327,6 +340,7 @@ public class QuickNavWindow extends AbstractIdentifiableStage {
 		protected void setSearchBar(@Nonnull AbstractSearchBar searchBar) {
 			this.searchBar = searchBar;
 			setTop(searchBar);
+			results.onSelect = () -> searchBar.recordSearch(searchBar.getSearchTextProperty().get());
 
 			// Register event filter which will allow jumping from the search bar to other controls.
 			// - UP ----> Select the containing tab-pane so users can switch tabs.
@@ -394,6 +408,7 @@ public class QuickNavWindow extends AbstractIdentifiableStage {
 		private static final PseudoClass PSEUDO_HOVER = PseudoClass.getPseudoClass("hover");
 		private final ObservableList<T> list = FXCollections.observableArrayList();
 		private final VirtualFlow<T, Cell<T, Node>> flow;
+		protected Runnable onSelect;
 
 		private PathResultsPane(@Nonnull Actions actions, @Nonnull Stage stage,
 		                        @Nonnull Consumer<ListCell<T>> renderCell) {
@@ -425,6 +440,7 @@ public class QuickNavWindow extends AbstractIdentifiableStage {
 				this.renderCell = renderCell;
 
 				select = () -> {
+					if (onSelect != null) onSelect.run();
 					try {
 						T item = cell.getItem();
 						if (item != null) {

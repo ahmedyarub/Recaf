@@ -219,6 +219,8 @@ bind.editor.save=Save
 bind.editor.undo=Undo
 bind.editor.closetab=Close current tab
 bind.quicknav=Quick nav
+bind.menu.search=Search
+bind.menu.file.openworkspace=Open workspace
 bind.workspace.export=Export workspace
 
 ##### Dialog texts

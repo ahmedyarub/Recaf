@@ -63,6 +63,9 @@ abstract class AbstractMemberSearchPane extends AbstractSearchPane {
 		TextField textOwner = new TextField();
 		TextField textName = new TextField();
 		TextField textDesc = new TextField();
+		setupAutoComplete(textOwner);
+		setupAutoComplete(textName);
+		setupAutoComplete(textDesc);
 		ComboBox<String> modeComboOwner = new BoundBiDiComboBox<>(ownerPredicateId, stringPredicates,
 				ToStringConverter.from(s -> Lang.get(StringPredicate.TRANSLATION_PREFIX + s)));
 		modeComboOwner.getSelectionModel().select(StringPredicateProvider.KEY_CONTAINS);

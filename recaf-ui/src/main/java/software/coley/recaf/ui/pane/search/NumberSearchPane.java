@@ -60,6 +60,7 @@ public class NumberSearchPane extends AbstractSearchPane {
 
 		List<String> biPredicates = numberPredicateProvider.getBiNumberMatchers().keySet().stream().sorted().toList();
 		DynamicNumericTextField textField = new DynamicNumericTextField(numericValueProperty, numericTypeProperty);
+		setupAutoComplete(textField);
 		ComboBox<String> modeCombo = new BoundBiDiComboBox<>(numericPredicateId, biPredicates,
 				ToStringConverter.from(s -> Lang.get(NumberPredicate.TRANSLATION_PREFIX + s)));
 		modeCombo.getSelectionModel().select(NumberPredicateProvider.KEY_EQUAL);

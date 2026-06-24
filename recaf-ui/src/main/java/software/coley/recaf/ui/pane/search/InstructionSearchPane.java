@@ -85,6 +85,7 @@ public class InstructionSearchPane extends AbstractSearchPane {
 					StringProperty stringValue = line.text();
 					StringProperty stringPredicateId = line.predicateId();
 					TextField textField = new TextField();
+					setupAutoComplete(textField);
 					textField.setId("text-" + line.uuid());
 					stringValue.bind(textField.textProperty());
 					ComboBox<String> modeCombo = new BoundBiDiComboBox<>(stringPredicateId, stringPredicates,

@@ -329,7 +329,7 @@ public class ConfigPane extends BorderPane implements ManagedConfigListener {
 				return container != null && ConfigPaneSearch.matches(container, tokens);
 			});
 		}
-		noResultsLabel.setVisible(root.getChildren().isEmpty() && !searchField.getText().isBlank());
+		noResultsLabel.setVisible(((TreeItem<?>) root).getChildren().isEmpty() && !searchField.getText().isBlank());
 
 		// Select first visible item if current selection is not visible.
 		TreeItem<String> currentSelection = tree.getSelectionModel().getSelectedItem();
