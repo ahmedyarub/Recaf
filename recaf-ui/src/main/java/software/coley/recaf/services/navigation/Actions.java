@@ -2487,6 +2487,7 @@ public class Actions implements Service {
 					d -> new FontIconView(CarbonIcons.CODE_REFERENCE), content);
 			Scene originScene = dockingManager.getPrimaryDockingContainer().asRegion().getScene();
 			Stage stage = dockingManager.getBento().stageBuilding().newStageForDockable(originScene, dockable, 900, 500);
+			stage.setAlwaysOnTop(true);
 			stage.show();
 			stage.requestFocus();
 		}
@@ -2523,6 +2524,7 @@ public class Actions implements Service {
 					d -> new FontIconView(CarbonIcons.CODE_REFERENCE), content);
 			Scene originScene = dockingManager.getPrimaryDockingContainer().asRegion().getScene();
 			Stage stage = dockingManager.getBento().stageBuilding().newStageForDockable(originScene, dockable, 900, 500);
+			stage.setAlwaysOnTop(true);
 			stage.show();
 			stage.requestFocus();
 		}
@@ -2576,6 +2578,7 @@ public class Actions implements Service {
 			dockable = createDockable(null, getBinding(titleId), d -> new FontIconView(icon), content);
 			Scene originScene = dockingManager.getPrimaryDockingContainer().asRegion().getScene();
 			Stage stage = dockingManager.getBento().stageBuilding().newStageForDockable(originScene, dockable, 800, 400);
+			stage.setAlwaysOnTop(true);
 			stage.show();
 			stage.requestFocus();
 		}
